@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pick a Contact</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+  <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-4">📇 Pick a Contact</h2>
+
+    <form id="userForm" class="space-y-4">
+      <button 
+        type="button" 
+        onclick="pickContact()"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
+      >
+        Select from Contacts
+      </button>
+
+      <div id="contactDetails" class="mt-4 space-y-2 text-sm text-gray-200">
+        <p>No contact selected.</p>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    async function pickContact() {
+      const contactContainer = document.getElementById('contactDetails');
+      contactContainer.innerHTML = '<p>Loading contact...</p>';
+
+      if ('contacts' in navigator && 'ContactsManager' in window) {
+        try {
+          const props = ['name', 'email', 'tel', 'address', 'icon'];
+          const opts = { multiple: false };
+          const contacts = await navigator.contacts.select(props, opts);
+
+          if (contacts.length > 0) {
+            const contact = contacts[0];
+            let html = '';
+
+            // Display icon if available
+            if (contact.icon && contact.icon[0]) {
+              const imgBlob = contact.icon[0];
+              const url = URL.createObjectURL(imgBlob);
+
+              // Display image
+              html += `<img src="${url}" alt="Contact Icon" class="w-16 h-16 rounded-full mb-4" />`;
+
+              // Revoke object URL after image is loaded to free up memory
+              const imgContainer = new Image();
+              imgContainer.onload = () => URL.revokeObjectURL(url);
+              imgContainer.src = url;
+            } else {
+              // Fallback if no icon
+              html += `<div class="w-16 h-16 rounded-full bg-gray-500 mb-4 flex items-center justify-center text-white">No Image</div>`;
+            }
+
+            // Display Name
+            if (contact.name && contact.name.length)
+              html += `<p><strong>Name:</strong> ${contact.name.join(', ')}</p>`;
+
+            // Display Email
+            if (contact.email && contact.email.length)
+              html += `<p><strong>Email:</strong> ${contact.email.join(', ')}</p>`;
+
+            // Display Phone
+            if (contact.tel && contact.tel.length)
+              html += `<p><strong>Phone:</strong> ${contact.tel.join(', ')}</p>`;
+
+            // Display Address
+            if (contact.address && contact.address.length) {
+              const address = contact.address[0]; // Assuming a single address
+              html += `<p><strong>Address:</strong></p>`;
+              html += `<ul class="list-disc ml-5">`;
+
+              if (address.recipient) html += `<li><strong>Recipient:</strong> ${address.recipient}</li>`;
+              if (address.organization) html += `<li><strong>Organization:</strong> ${address.organization}</li>`;
+              if (address.addressLine && address.addressLine.length) {
+                address.addressLine.forEach(line => {
+                  html += `<li><strong>Address Line:</strong> ${line}</li>`;
+                });
+              }
+              if (address.city) html += `<li><strong>City:</strong> ${address.city}</li>`;
+              if (address.region) html += `<li><strong>Region:</strong> ${address.region}</li>`;
+              if (address.postalCode) html += `<li><strong>Postal Code:</strong> ${address.postalCode}</li>`;
+              if (address.country) html += `<li><strong>Country:</strong> ${address.country}</li>`;
+              if (address.sortingCode) html += `<li><strong>Sorting Code:</strong> ${address.sortingCode}</li>`;
+              if (address.dependentLocality) html += `<li><strong>Dependent Locality:</strong> ${address.dependentLocality}</li>`;
+
+              html += `</ul>`;
+            } else {
+              html += `<p><strong>Address:</strong> Not available</p>`;
+            }
+
+            contactContainer.innerHTML = html;
+          } else {
+            contactContainer.innerHTML = '<p>No contact selected.</p>';
+          }
+        } catch (err) {
+          contactContainer.innerHTML = '<p class="text-red-400">Error accessing contacts.</p>';
+          alert('Access to contacts was denied or not supported.');
+        }
+      } else {
+        alert('Contact Picker API not supported on this device or browser.');
+      }
+    }
+  </script>
+</body>
+</html>
